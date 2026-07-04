@@ -176,7 +176,7 @@ const U64 not_ab_file = 18229723555195321596ULL;
 U64 pawn_attacks[2][64];
 
 //generate pawn attacks (curr_square, side to move)
-U64  mask_pawn_attacks(int square, int side){
+U64  mask_pawn_attacks(int side, int square){
 
     // result attacks bitboard
     U64 attacks = 0ULL;
@@ -209,8 +209,18 @@ U64  mask_pawn_attacks(int square, int side){
 
     //return attack map
     return attacks;
+}
 
+//initialize leaper pieces attacks
+void init_leapers_attacks(){
 
+    //loop over 64 board squares
+    for(int square = 0; square < 64; square++){
+
+        //init pawn attacks
+        pawn_attacks[white][square] = mask_pawn_attacks(white, square);
+        pawn_attacks[black][square] = mask_pawn_attacks(black, square);
+    }
 }
 
 
@@ -221,7 +231,13 @@ U64  mask_pawn_attacks(int square, int side){
 //main driver
 int main(){
 
-    print_bitboard(mask_pawn_attacks(d4, black));
+    //init leaper peices attacks
+    
+    init_leapers_attacks();
 
+    // loop over 64 board squares
+    for(int square = 0;  square < 64 ; square++){
+        print_bitboard(pawn_attacks[black][square]);
+    }
     return 0;   
 } 
