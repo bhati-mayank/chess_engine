@@ -198,6 +198,33 @@ const U64 not_hg_file = 4557430888798830399ULL;
 const U64 not_ab_file = 18229723555195321596ULL;
 
 
+//relevant occupancy bit count for every square on board
+
+  //bishop
+const int bishop_relevant_bits[64] = {
+        6, 5, 5, 5, 5, 5, 5, 6, 
+        5, 5, 5, 5, 5, 5, 5, 5, 
+        5, 5, 7, 7, 7, 7, 5, 5, 
+        5, 5, 7, 9, 9, 7, 5, 5, 
+        5, 5, 7, 9, 9, 7, 5, 5, 
+        5, 5, 7, 7, 7, 7, 5, 5, 
+        5, 5, 5, 5, 5, 5, 5, 5, 
+        6, 5, 5, 5, 5, 5, 5, 6 
+};
+
+  //rook
+const int rook_relevant_bits[64] = {
+    12, 11, 11, 11, 11, 11, 11, 12, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    12, 11, 11, 11, 11, 11, 11, 12 
+};
+
+
 //===========================================//
 //===========================================//
 
@@ -521,14 +548,16 @@ int main(){
     //init leaper pieces attacks
     init_leapers_attacks();
 
-    //mask piece attacks at given square
-    U64 attack_mask = mask_bishop_attacks(d4);
+    for(int rank = 0; rank < 8; rank++){
+        for(int file = 0; file < 8; file++){
 
-    //loop over occupancy indicies
+            int square = rank * 8 + file;
 
-    for(int index = 0; index < 100; index++)
-        //init occupancy
-        print_bitboard(set_occupancy(index, count_bits(attack_mask), attack_mask));
+            printf("%d, ", count_bits(mask_rook_attacks(square)));
+        }
+
+        printf("\n");
+    }
 
     return 0;   
 } 
