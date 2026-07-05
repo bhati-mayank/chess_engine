@@ -39,7 +39,25 @@ enum { white, black };
 #define get_bit(bitboard, square) (bitboard & (1ULL << square))
 #define pop_bit(bitboard, square) (get_bit(bitboard, square) ? bitboard ^= (1ULL << square) : 0)
 
+// count bits within a bitboard
+static inline int count_bits(U64 bitboard){
 
+    //bit counter
+    int count = 0;
+
+    //consecutively reset least significant bit 
+    while(bitboard){
+
+        //resetting the least significant bit
+        bitboard = bitboard & (bitboard -1);
+
+        //increment count
+            count++;
+    }
+
+    //return the bit counter 
+    return count;
+}
 
 //printing the bitboard
 void print_bitboard(U64 bitboard){
@@ -468,6 +486,7 @@ int main(){
     set_bit(block, b4);
     set_bit(block, g4);
 
-    print_bitboard(rook_attacks_on_the_fly(d4, block));
+    printf("%d", count_bits(block));
+
     return 0;   
 } 
