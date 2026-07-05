@@ -339,6 +339,94 @@ U64 mask_rook_attacks(int square){
 }
 
 
+// generate  bishop attacks on  the fly
+U64 bishop_attacks_on_the_fly(int square, U64 block){
+
+    //result attacks bitboard
+    U64 attacks = 0ULL;
+
+    //init ranks and files
+    int r, f;
+
+    //init target rank and files
+    int tr = square/ 8;
+    int tf = square% 8;
+
+    //generate bishop attacks
+    for(r = tr + 1, f = tf + 1; r <= 7 && f <= 7; r++,f++){
+
+        attacks |= (1ULL << (r*8 + f));
+        if((1ULL << (r*8 + f)) & block) break;
+    }
+
+    for(r = tr - 1, f = tf + 1; r >= 0 && f <= 7; r--,f++){
+
+        attacks |= (1ULL << (r*8 + f));
+        if((1ULL << (r*8 + f)) & block) break;
+    }
+
+
+    for(r = tr + 1, f = tf - 1; r <= 7 && f >= 0; r++,f--){
+
+        attacks |= (1ULL << (r*8 + f));
+        if((1ULL << (r*8 + f)) & block) break;
+    }
+
+    for(r = tr - 1, f = tf - 1; r >= 0 && f >= 0; r--,f--){
+
+        attacks |= (1ULL << (r*8 + f));
+        if((1ULL << (r*8 + f)) & block) break;
+    }
+
+    //return attack map
+    return attacks;
+}
+
+
+//generate  rook attacks on the fly
+U64 rook_attacks_on_the_fly(int square, U64 block){
+
+    //result attacks bitboard
+    U64 attacks = 0ULL;
+
+    //init ranks and files
+    int r, f;
+
+    //init target rank and files
+    int tr = square/ 8;
+    int tf = square% 8;
+
+    //generate rook attacks
+    for(r = tr + 1; r <= 7; r++){
+
+        attacks |= (1ULL << (r * 8 + tf));
+        if((1ULL << (r * 8 + tf)) & block) break;
+    }
+
+    for(r = tr - 1; r >= 0; r--){
+
+        attacks |= (1ULL << (r * 8 + tf));
+        if((1ULL << (r * 8 + tf)) & block) break;
+
+    }
+
+    for(f = tf + 1; f <= 7; f++){
+
+        attacks |= (1ULL << (tr * 8 + f));
+        if((1ULL << (tr * 8 + f)) & block) break;
+    }
+
+    for(f = tf - 1; f >= 0; f--){
+
+        attacks |= (1ULL << (tr * 8 + f));
+        if((1ULL << (tr * 8 + f)) & block) break;
+    }
+
+    //return attack map
+    return attacks;
+}
+
+
 //initialize leaper pieces attacks
 void init_leapers_attacks(){
 
@@ -372,11 +460,14 @@ int main(){
     
     init_leapers_attacks();
 
-    // loop over 64 board squares
-    for(int square = 0;  square < 64 ; square++)
-        print_bitboard(mask_rook_attacks(square));
-    
+    //init ocupancy bitboard
+    U64 block = 0ULL;
+ 
+    set_bit(block, d7);
+    set_bit(block, d2);
+    set_bit(block, b4);
+    set_bit(block, g4);
 
-    //print_bitboard(mask_rook_attacks(d4));
+    print_bitboard(rook_attacks_on_the_fly(d4, block));
     return 0;   
 } 
