@@ -161,15 +161,8 @@ const U64 not_hg_file = 4557430888798830399ULL;
 const U64 not_ab_file = 18229723555195321596ULL;
 
 
-
-
-
 //===========================================//
 //===========================================//
-
-
-
-
 
 
 /*  PAWN ATTACKS TABLE  [side to move][square]  */
@@ -315,8 +308,6 @@ U64 mask_bishop_attacks(int square){
 }
 
 
-
-
 //mask rook attacks
 U64 mask_rook_attacks(int square){
 
@@ -348,12 +339,6 @@ U64 mask_rook_attacks(int square){
 }
 
 
-
-
-
-
-
-
 //initialize leaper pieces attacks
 void init_leapers_attacks(){
 
@@ -374,10 +359,13 @@ void init_leapers_attacks(){
 
 
 
+//======================================//
+/*
+            MAIN DRIVER
+*/
+//======================================//
 
 
-
-//main driver
 int main(){
 
     //init leaper pieces attacks
