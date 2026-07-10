@@ -851,11 +851,6 @@ int main(){
     set_bit(occupancy, h8);
     set_bit(occupancy, e5);
     
-
-
-
-
-
     //print_bitboard(occupancy);
 
     //print bishop attacks
