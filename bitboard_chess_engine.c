@@ -547,7 +547,7 @@ U64 set_occupancy(int index, int bits_in_mask, U64 attack_mask){
 unsigned int state = 1804289383;
 
 // generate 32-bit pseudo legal numbers
-unsigned int get_random_number(){
+unsigned int get_random_U32_number(){
 
     //get current state
     unsigned int number = state;
@@ -564,7 +564,28 @@ unsigned int get_random_number(){
 
     //return the random number
     return number;
+}
 
+//generate 64-bit pseudo legal numbers
+U64 get_random_U64_number(){
+
+    //define 4 random numbers
+    U64 n1,n2,n3,n4;
+
+    //init random numbers slicing 16bits form MSB side
+    n1 = (U64)(get_random_U32_number() & 0xFFFF);
+    n2 = (U64)(get_random_U32_number() & 0xFFFF);
+    n3 = (U64)(get_random_U32_number() & 0xFFFF);
+    n4 = (U64)(get_random_U32_number() & 0xFFFF);
+
+    //return random number
+    return n1 | ( n2 << 16 ) | (n3 << 32) | (n4 << 48);
+}
+
+//generate magic number candidate
+U64 generate_magic_number(){
+
+    return get_random_U64_number() & get_random_U64_number() & get_random_U64_number();
 }
 
 int main(){
@@ -572,11 +593,10 @@ int main(){
     //init leaper pieces attacks
     init_leapers_attacks();
 
-    printf("%ud\n", get_random_number());
-    printf("%ud\n", get_random_number());
-    printf("%ud\n", get_random_number());
-    printf("%ud\n", get_random_number());
-    printf("%ud\n", get_random_number());
 
+    print_bitboard((U64)get_random_U32_number());
+    print_bitboard((U64)get_random_U32_number() & 0xFFFF);
+    print_bitboard(get_random_U64_number());
+    print_bitboard(generate_magic_number());
     return 0;   
 } 
