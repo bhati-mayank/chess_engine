@@ -1017,6 +1017,7 @@ int main(){
     print_bitboard(bitboards[P]);
 
     printf("piece : %c\n", ascii_pieces[P]);
+
     printf("piece : %s\n", unicode_pieces[P]);
 
     return 0;
