@@ -200,7 +200,7 @@ U64 bitboards[12];
 U64 occupancies[3];
 
 // side to move
-int side = -1;
+int side;
 
 // enpassant square
 int enpassant = no_sq;
@@ -335,6 +335,68 @@ void print_bitboard(U64 bitboard){
 
     //print bitboard as unsigned decimal number
     printf("\n\nBitboard : %llud\n\n", bitboard);
+}
+
+//print board
+void print_board()
+{
+    printf("\n");
+
+    // loop over board ranks
+    for (int rank = 0; rank < 8; rank++)
+    {
+
+
+        // loop over board files
+        for (int file = 0; file < 8; file++)
+        {
+            // init square
+            int square = rank * 8 + file;
+
+            //print ranks
+            if(!file){
+                printf(" %d   ", 8 - rank);
+            }
+
+            // define piece variable
+            int piece = -1;
+
+            // loop over all piece bitboards
+            for( int bb_piece = P; bb_piece <= k; bb_piece++ ){
+
+                if(get_bit(bitboards[bb_piece], square))
+                    piece = bb_piece;
+            }
+
+            // print piece
+            #ifdef WIN64
+                printf(" %c ", (piece == -1) ? '.' : ascii_pieces[piece]);
+
+            #else
+                printf(" %s ", (piece == -1) ? "." : unicode_pieces[piece]);
+
+            #endif
+
+        }
+
+        printf("\n");
+    }
+
+    // print files
+    printf("\n      a  b  c  d  e  f  g  h\n\n");
+
+    // print side to move
+    printf("      Side      :     %s\n", !side ? "white" : "black" );
+
+
+    //print enpassant square
+    printf("      Enpassant :     %s\n", (enpassant != no_sq) ? square_to_coordinates[enpassant] : "no");
+
+    // print castling rights
+    printf("      Castling  :     %c%c%c%c\n\n", (castle & wk) ? 'K' : '-',
+                                            (castle & wq) ? 'Q' : '-',
+                                            (castle & bk) ? 'k' : '-',
+                                            (castle & bq) ? 'q' : '-');
 }
 
 
@@ -1013,12 +1075,23 @@ int main(){
     init_all();
 
     set_bit(bitboards[P], e2);
+    set_bit(bitboards[P], h2);
+    set_bit(bitboards[P], b2);
+    set_bit(bitboards[P], d2);
 
-    print_bitboard(bitboards[P]);
+    set_bit(bitboards[N], b1);
+    set_bit(bitboards[N], g1);
 
-    printf("piece : %c\n", ascii_pieces[P]);
+    //init side
+    side = black;
 
-    printf("piece : %s\n", unicode_pieces[P]);
+    //init expassant
+    enpassant = e3;
+
+
+    //print_bitboard(bitboards[P]);
+
+    print_board();
 
     return 0;
 
