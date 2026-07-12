@@ -338,8 +338,8 @@ void print_bitboard(U64 bitboard){
 }
 
 //print board
-void print_board()
-{
+void print_board(){
+
     printf("\n");
 
     // loop over board ranks
