@@ -1248,15 +1248,8 @@ int main(){
     //init all
     init_all();
 
-    // init occupancy bit board
-    U64 occupancy = 0ULL;
-
-    // set occuoancy
-    set_bit(occupancy, b6);
-    set_bit(occupancy, d6);
-
-    // get queen attacks
-    print_bitboard(get_queen_attacks(d4, occupancy));
+    parse_fen("8/8/8/3P4/8/8/8/8 w - - ");
+    print_board();
     return 0;
 
 } 
