@@ -1233,6 +1233,67 @@ void init_all(){
     //init_magic_numbers();
 }
 
+// is current given square  attacked by current given side
+static inline int is_square_attacked(int square, int side){
+
+    //attacked by white pawns
+    if ((side == white) && (pawn_attacks[black][square] & bitboards[P]))
+        return 1;
+
+    //attacked by pawn pawns
+    if ((side == black) && (pawn_attacks[white][square] & bitboards[p]))
+        return 1;
+
+    // attacked by knights
+     if (knight_attacks[square] & ((side == white) ? bitboards[N] : bitboards[n]))
+        return 1;
+
+    // attacked by bishops
+    if (get_bishop_attacks(square, occupancies[both]) & ((side == white) ? bitboards[B] : bitboards[b])) 
+        return 1;
+
+    // attacked by rooks
+    if (get_bishop_attacks(square, occupancies[both]) & ((side == white) ? bitboards[R] : bitboards[r])) 
+        return 1;
+
+    // attacked by king
+     if (king_attacks[square] & ((side == white) ? bitboards[K] : bitboards[k]))
+        return 1;
+
+
+
+    // by default
+    return 0;
+}
+
+// print attacked  squares
+void print_attacked_squares(int side){
+
+    // loop over board ranks
+    for(int rank = 0; rank < 8; rank++){
+        //loop over board files
+        for(int file = 0; file < 8; file++){
+
+            // init square
+            int square = rank * 8 + file;
+
+            //print rank
+            if(!file)
+                printf("  %d  ", 8 - rank);
+
+            // check whether curr square is attacked or not
+            printf(" %d ",is_square_attacked(square, side) ? 1 : 0);
+        }
+
+        // new line every rank
+        printf("\n");
+    }
+    printf("\n");
+
+    // print files
+    printf("      a  b  c  d  e  f  g  h \n\n\n");
+}
+
 
 //======================================//
 /*
@@ -1248,8 +1309,12 @@ int main(){
     //init all
     init_all();
 
-    parse_fen("8/8/8/3P4/8/8/8/8 w - - ");
+    parse_fen("8/8/8/3B4/8/8/8/8 w - - ");
     print_board();
-    return 0;
 
+    print_bitboard(occupancies[both]);
+
+    print_attacked_squares(white);
+
+    return 0;
 } 
