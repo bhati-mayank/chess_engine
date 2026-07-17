@@ -1663,6 +1663,51 @@ static inline void generate_moves()
                         }
                     }
 
+                    // init pawn attacks bitboard
+                    attacks = pawn_attacks[side][source_square] & occupancies[white];
+
+                    // generate pawn captures
+                    while (attacks)
+                    {
+                        // init target square
+                        target_square = get_ls1st_bit_index(attacks);
+
+                        // pawn promotion
+                       if (source_square >= a2 && source_square <= h2)
+                        {
+                            // add move into a move list
+                            printf("pawn  promotion capture: %s%sq\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                            printf("pawn  promotion capture: %s%sr\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                            printf("pawn  promotion capture: %s%sb\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                            printf("pawn  promotion capture: %s%sn\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                        }
+
+                        else 
+                            // one square ahead pawn move
+                            printf("pawn capture: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+
+
+
+                        // pop ls1stbit of pawn attacks
+                        pop_bit(attacks, target_square);
+                    }
+
+                    // generate enpassant captures
+                    if (enpassant != no_sq)
+                    {
+                        // look-up pawn attacks and bitwise AND with enpassant square (bit)
+                        U64 enpassant_attacks = pawn_attacks[side][source_square] & (1ULL << enpassant);
+
+                        // make sure enpassant capture  avail
+                        if (enpassant_attacks)
+                        {
+                            // init enpassant capture target square
+                            int target_enpassant = get_ls1st_bit_index(enpassant_attacks);
+                            printf("pawn  enapassant capture: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_enpassant]);
+
+                        }
+                    }
+
                     // pop ls1stbit from bitboard copy
                     pop_bit(bitboard, source_square);
                 }
@@ -1723,7 +1768,7 @@ int main()
     // init all
     init_all();
 
-    parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w Kk e3 0 1");
+    parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b Kk e3 0 1");
     print_board();
 
     generate_moves();
