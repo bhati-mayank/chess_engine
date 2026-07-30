@@ -1657,6 +1657,63 @@ static inline int make_move(int move, int move_flag)
             //set_bit(bitboards[promoted_piece], target_square);
 
         }
+
+        // handle enpassant captures
+        if(enpass)
+        {
+            // erse the pawn depending on the side to move
+            (side == white) ? pop_bit(bitboards[p], target_square + 8) :
+                              pop_bit(bitboards[P], target_square - 8);
+        }
+
+        // reset enpassant square
+        enpassant = no_sq;
+
+        // handle double pawn push
+        if( double_push)
+        {
+            // set enpassant square depending on side to move
+            (side == white) ? (enpassant = target_square + 8) :
+                                 (enpassant = target_square - 8);
+        }
+
+        // handle castling moves
+        if (castling)
+        {
+            // switch target square
+            switch (target_square)
+            {
+                // white castles king side
+                case (g1) :
+                    //move H rook
+                    pop_bit(bitboards[R], h1);
+                    set_bit(bitboards[R], f1);
+                    break;
+
+
+                // white castles queen side
+                case (c1) :
+                    //move A rook
+                    pop_bit(bitboards[R], a1);
+                    set_bit(bitboards[R], d1);
+                    break;
+
+                // black castles king side
+                case (g8) :
+                    //move H rook
+                    pop_bit(bitboards[r], h8);
+                    set_bit(bitboards[R], f8);
+                    break;
+
+                // black castles queen side
+                case (c8) :
+                    //move A rook
+                    pop_bit(bitboards[R], a8);
+                    set_bit(bitboards[R], h8);
+                    break;
+
+            }
+        }
     }
 
     // capture moves
