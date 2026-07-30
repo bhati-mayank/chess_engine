@@ -8,9 +8,9 @@
 #define U64 unsigned long long
 
 // FEN dedud positions
-#define empty_board "8/8/8/8/8/8/8/8 w - - "
+#define empty_board "8/8/8/8/8/8/8/8 b - - "
 #define start_position "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define tricky_position "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b Kk e3 0 1"
+#define tricky_position "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KkQq - 0 1"
 #define killer_position "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1"
 #define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3P3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9"
 
@@ -1530,6 +1530,12 @@ void print_move(int move)
 // print move list
 void print_move_list(moves *move_list)
 {
+    // do nothing on empty move list
+    if (!move_list->count)
+    {
+        printf("    No moves in the move list");
+        return;
+    }
     printf("\n move     piece    capture    double    enpassant    castling\n");
     // loop over moves within the move list
     for (int move_count = 0; move_count < move_list->count; move_count++)
@@ -1539,9 +1545,9 @@ void print_move_list(moves *move_list)
 
 #ifdef WIN64
         // print move
-        printf("\n %s%s%s   %s        %d          %d         %d            %d\n", square_to_coordinates[get_move_source(move)],
+        printf("\n %s%s%c   %s        %d          %d         %d            %d\n", square_to_coordinates[get_move_source(move)],
                square_to_coordinates[get_move_target(move)],
-               square_to_coordinates[get_move_promoted(move)],
+               get_move_promoted(move) ? promoted_pieces[get_move_promoted(move)] : ' ',
                ascii_pieces[get_move_piece(move)],
                get_move_capture(move) ? 1 : 0,
                get_move_double(move) ? 1 : 0,
@@ -1549,9 +1555,9 @@ void print_move_list(moves *move_list)
                get_move_castling(move) ? 1 : 0);
 
 #else
-        printf("\n %s%s%s   %s        %d          %d         %d            %d\n", square_to_coordinates[get_move_source(move)],
+        printf("\n %s%s%c   %s        %d          %d         %d            %d\n", square_to_coordinates[get_move_source(move)],
                square_to_coordinates[get_move_target(move)],
-               square_to_coordinates[get_move_promoted(move)],
+               get_move_promoted(move) ? promoted_pieces[get_move_promoted(move)] : ' ',
                unicode_pieces[get_move_piece(move)],
                get_move_capture(move) ? 1 : 0,
                get_move_double(move) ? 1 : 0,
@@ -1563,6 +1569,21 @@ void print_move_list(moves *move_list)
     // print total number of moves
     printf("\n Total number of moves: %d\n\n", move_list->count);
 }
+
+// preserve board state
+#define copy_board()                                                      \
+    U64 bitboards_copy[12], occupancies_copy[3];                          \
+    int side_copy, enpassant_copy, castle_copy;                           \
+    memcpy(bitboards_copy, bitboards, 96);                                \
+    memcpy(occupancies_copy, occupancies, 24);                            \
+    side_copy = side, enpassant_copy = enpassant, castle_copy = castle;
+
+
+// restore board state                                                   
+#define take_back()                                                      \
+    memcpy(bitboards,  bitboards_copy, 96);                              \
+    memcpy(occupancies,  occupancies_copy, 24);                          \
+    side = side_copy, enpassant = enpassant_copy, castle = castle_copy;  
 
 // is current given square  attacked by current given side
 static inline int is_square_attacked(int square, int side)
@@ -1632,21 +1653,24 @@ void print_attacked_squares(int side)
 }
 
 // generate all moves
-static inline void generate_moves()
+static inline void generate_moves(moves *move_list)
 {
-    // define source and target squares
+    // init move count
+    move_list->count = 0;
+
+    // define source & target squares
     int source_square, target_square;
-
-    // define current piece's bitboard copy & its attacks
+    
+    // define current piece's bitboard copy & it's attacks
     U64 bitboard, attacks;
-
+    
     // loop over all the bitboards
     for (int piece = P; piece <= k; piece++)
     {
         // init piece bitboard copy
         bitboard = bitboards[piece];
-
-        // generate white pawns and white king castling moves
+        
+        // generate white pawns & white king castling moves
         if (side == white)
         {
             // pick up white pawn bitboards index
@@ -1657,170 +1681,222 @@ static inline void generate_moves()
                 {
                     // init source square
                     source_square = get_ls1st_bit_index(bitboard);
-
+                    
                     // init target square
                     target_square = source_square - 8;
-
+                    
                     // generate quite pawn moves
                     if (!(target_square < a8) && !get_bit(occupancies[both], target_square))
                     {
                         // pawn promotion
                         if (source_square >= a7 && source_square <= h7)
-                        {
-                            // add move into a move list
-                            printf("pawn promotion: %s%sq\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn promotion: %s%sr\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn promotion: %s%sb\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn promotion: %s%sn\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                        {                            
+                            add_move(move_list, encode_move(source_square, target_square, piece, Q, 0, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, R, 0, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, B, 0, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, N, 0, 0, 0, 0));
                         }
-
+                        
                         else
                         {
                             // one square ahead pawn move
-                            printf("pawn push: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
+                            add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                            
                             // two squares ahead pawn move
                             if ((source_square >= a2 && source_square <= h2) && !get_bit(occupancies[both], target_square - 8))
-                                printf("double pawn push: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square - 8]);
+                                add_move(move_list, encode_move(source_square, target_square - 8, piece, 0, 0, 1, 0, 0));
                         }
                     }
-
+                    
                     // init pawn attacks bitboard
                     attacks = pawn_attacks[side][source_square] & occupancies[black];
-
+                    
                     // generate pawn captures
                     while (attacks)
                     {
                         // init target square
                         target_square = get_ls1st_bit_index(attacks);
-
+                        
                         // pawn promotion
                         if (source_square >= a7 && source_square <= h7)
                         {
-                            // add move into a move list
-                            printf("pawn  promotion capture: %s%sq\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn  promotion capture: %s%sr\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn  promotion capture: %s%sb\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn  promotion capture: %s%sn\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                            add_move(move_list, encode_move(source_square, target_square, piece, Q, 1, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, R, 1, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, B, 1, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, N, 1, 0, 0, 0));
                         }
-
+                        
                         else
                             // one square ahead pawn move
-                            printf("pawn capture:     %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                        // pop ls1stbit of pawn attacks
+                            add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                        
+                        // pop ls1b of the pawn attacks
                         pop_bit(attacks, target_square);
                     }
-
+                    
                     // generate enpassant captures
                     if (enpassant != no_sq)
                     {
-                        // look-up pawn attacks and bitwise AND with enpassant square (bit)
+                        // lookup pawn attacks and bitwise AND with enpassant square (bit)
                         U64 enpassant_attacks = pawn_attacks[side][source_square] & (1ULL << enpassant);
-
-                        // make sure enpassant capture  avail
+                        
+                        // make sure enpassant capture available
                         if (enpassant_attacks)
                         {
                             // init enpassant capture target square
                             int target_enpassant = get_ls1st_bit_index(enpassant_attacks);
-                            printf("pawn  enapassant capture: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_enpassant]);
+                            add_move(move_list, encode_move(source_square, target_enpassant, piece, 0, 1, 0, 1, 0));
                         }
                     }
-
-                    // pop ls1stbit from bitboard copy
+                    
+                    // pop ls1b from piece bitboard copy
                     pop_bit(bitboard, source_square);
                 }
             }
+            
+            // castling moves
+            if (piece == K)
+            {
+                // king side castling is available
+                if (castle & wk)
+                {
+                    // make sure square between king and king's rook are empty
+                    if (!get_bit(occupancies[both], f1) && !get_bit(occupancies[both], g1))
+                    {
+                        // make sure king and the f1 squares are not under attacks
+                        if (!is_square_attacked(e1, black) && !is_square_attacked(f1, black))
+                            add_move(move_list, encode_move(e1, g1, piece, 0, 0, 0, 0, 1));
+                    }
+                }
+                
+                // queen side castling is available
+                if (castle & wq)
+                {
+                    // make sure square between king and queen's rook are empty
+                    if (!get_bit(occupancies[both], d1) && !get_bit(occupancies[both], c1) && !get_bit(occupancies[both], b1))
+                    {
+                        // make sure king and the d1 squares are not under attacks
+                        if (!is_square_attacked(e1, black) && !is_square_attacked(d1, black))
+                            add_move(move_list, encode_move(e1, c1, piece, 0, 0, 0, 0, 1));
+                    }
+                }
+            }
         }
-
-        // generate black pawns and black king castling moves
+        
+        // generate black pawns & black king castling moves
         else
         {
-            // pick up white pawn bitboards index
+            // pick up black pawn bitboards index
             if (piece == p)
             {
-                // loop over black pawns within white pawn bitboard
+                // loop over white pawns within white pawn bitboard
                 while (bitboard)
                 {
                     // init source square
                     source_square = get_ls1st_bit_index(bitboard);
-
+                    
                     // init target square
                     target_square = source_square + 8;
-
+                    
                     // generate quite pawn moves
                     if (!(target_square > h1) && !get_bit(occupancies[both], target_square))
                     {
                         // pawn promotion
                         if (source_square >= a2 && source_square <= h2)
                         {
-                            // add move into a move list
-                            printf("pawn promotion: %s%sq\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn promotion: %s%sr\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn promotion: %s%sb\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn promotion: %s%sn\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                            add_move(move_list, encode_move(source_square, target_square, piece, q, 0, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, r, 0, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, b, 0, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, n, 0, 0, 0, 0));
                         }
-
+                        
                         else
                         {
                             // one square ahead pawn move
-                            printf("pawn push:     %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
+                            add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                            
                             // two squares ahead pawn move
                             if ((source_square >= a7 && source_square <= h7) && !get_bit(occupancies[both], target_square + 8))
-                                printf("double pawn push: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square + 8]);
+                                add_move(move_list, encode_move(source_square, target_square + 8, piece, 0, 0, 1, 0, 0));
                         }
                     }
-
+                    
                     // init pawn attacks bitboard
                     attacks = pawn_attacks[side][source_square] & occupancies[white];
-
+                    
                     // generate pawn captures
                     while (attacks)
                     {
                         // init target square
                         target_square = get_ls1st_bit_index(attacks);
-
+                        
                         // pawn promotion
                         if (source_square >= a2 && source_square <= h2)
                         {
-                            // add move into a move list
-                            printf("pawn  promotion capture: %s%sq\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn  promotion capture: %s%sr\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn  promotion capture: %s%sb\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-                            printf("pawn  promotion capture: %s%sn\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
+                            add_move(move_list, encode_move(source_square, target_square, piece, q, 1, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, r, 1, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, b, 1, 0, 0, 0));
+                            add_move(move_list, encode_move(source_square, target_square, piece, n, 1, 0, 0, 0));
                         }
-
+                        
                         else
                             // one square ahead pawn move
-                            printf("pawn capture: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                        // pop ls1stbit of pawn attacks
+                            add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                        
+                        // pop ls1b of the pawn attacks
                         pop_bit(attacks, target_square);
                     }
-
+                    
                     // generate enpassant captures
                     if (enpassant != no_sq)
                     {
-                        // look-up pawn attacks and bitwise AND with enpassant square (bit)
+                        // lookup pawn attacks and bitwise AND with enpassant square (bit)
                         U64 enpassant_attacks = pawn_attacks[side][source_square] & (1ULL << enpassant);
-
-                        // make sure enpassant capture  avail
+                        
+                        // make sure enpassant capture available
                         if (enpassant_attacks)
                         {
                             // init enpassant capture target square
                             int target_enpassant = get_ls1st_bit_index(enpassant_attacks);
-                            printf("pawn  enapassant capture: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_enpassant]);
+                            add_move(move_list, encode_move(source_square, target_enpassant, piece, 0, 1, 0, 1, 0));
                         }
                     }
-
-                    // pop ls1stbit from bitboard copy
+                    
+                    // pop ls1b from piece bitboard copy
                     pop_bit(bitboard, source_square);
                 }
             }
+            
+            // castling moves
+            if (piece == k)
+            {
+                // king side castling is available
+                if (castle & bk)
+                {
+                    // make sure square between king and king's rook are empty
+                    if (!get_bit(occupancies[both], f8) && !get_bit(occupancies[both], g8))
+                    {
+                        // make sure king and the f8 squares are not under attacks
+                        if (!is_square_attacked(e8, white) && !is_square_attacked(f8, white))
+                            add_move(move_list, encode_move(e8, g8, piece, 0, 0, 0, 0, 1));
+                    }
+                }
+                
+                // queen side castling is available
+                if (castle & bq)
+                {
+                    // make sure square between king and queen's rook are empty
+                    if (!get_bit(occupancies[both], d8) && !get_bit(occupancies[both], c8) && !get_bit(occupancies[both], b8))
+                    {
+                        // make sure king and the d8 squares are not under attacks
+                        if (!is_square_attacked(e8, white) && !is_square_attacked(d8, white))
+                            add_move(move_list, encode_move(e8, c8, piece, 0, 0, 0, 0, 1));
+                    }
+                }
+            }
         }
-
-        // generate knight moves
+        
+        // genarate knight moves
         if ((side == white) ? piece == N : piece == n)
         {
             // loop over source squares of piece bitboard copy
@@ -1828,33 +1904,34 @@ static inline void generate_moves()
             {
                 // init source square
                 source_square = get_ls1st_bit_index(bitboard);
-
-                // init piece attacks in order to get set of target square
+                
+                // init piece attacks in order to get set of target squares
                 attacks = knight_attacks[source_square] & ((side == white) ? ~occupancies[white] : ~occupancies[black]);
-
-                // loop over target squares avail from generates attacks
+                
+                // loop over target squares available from generated attacks
                 while (attacks)
                 {
-                    //  init target square
-                    target_square = get_ls1st_bit_index(attacks);
-
-                    // quite moves
+                    // init target square
+                    target_square = get_ls1st_bit_index(attacks);    
+                    
+                    // quite move
                     if (!get_bit(((side == white) ? occupancies[black] : occupancies[white]), target_square))
-                        printf("piece quiet move: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                    
                     else
-                        printf("piece capture:    %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // pop ls1stbit in current attack set
+                        // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                    
+                    // pop ls1b in current attacks set
                     pop_bit(attacks, target_square);
                 }
-
-                // pop ls1stbit of current piece bitboard copy
+                
+                
+                // pop ls1b of the current piece bitboard copy
                 pop_bit(bitboard, source_square);
             }
         }
-
+        
         // generate bishop moves
         if ((side == white) ? piece == B : piece == b)
         {
@@ -1863,32 +1940,34 @@ static inline void generate_moves()
             {
                 // init source square
                 source_square = get_ls1st_bit_index(bitboard);
-
-                // init piece attacks in order to get set of target square
+                
+                // init piece attacks in order to get set of target squares
                 attacks = get_bishop_attacks(source_square, occupancies[both]) & ((side == white) ? ~occupancies[white] : ~occupancies[black]);
-
-                // loop over target squares avail from generates attacks
+                
+                // loop over target squares available from generated attacks
                 while (attacks)
                 {
-                    //  init target square
-                    target_square = get_ls1st_bit_index(attacks);
-
-                    // quite moves
+                    // init target square
+                    target_square = get_ls1st_bit_index(attacks);    
+                    
+                    // quite move
                     if (!get_bit(((side == white) ? occupancies[black] : occupancies[white]), target_square))
-                        printf("piece quiet move: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                    
                     else
-                        printf("piece capture:    %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // pop ls1stbit in current attack set
+                        // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                    
+                    // pop ls1b in current attacks set
                     pop_bit(attacks, target_square);
                 }
-
-                // pop ls1stbit of current piece bitboard copy
+                
+                
+                // pop ls1b of the current piece bitboard copy
                 pop_bit(bitboard, source_square);
             }
         }
+        
         // generate rook moves
         if ((side == white) ? piece == R : piece == r)
         {
@@ -1897,32 +1976,34 @@ static inline void generate_moves()
             {
                 // init source square
                 source_square = get_ls1st_bit_index(bitboard);
-
-                // init piece attacks in order to get set of target square
+                
+                // init piece attacks in order to get set of target squares
                 attacks = get_rook_attacks(source_square, occupancies[both]) & ((side == white) ? ~occupancies[white] : ~occupancies[black]);
-
-                // loop over target squares avail from generates attacks
+                
+                // loop over target squares available from generated attacks
                 while (attacks)
                 {
-                    //  init target square
-                    target_square = get_ls1st_bit_index(attacks);
-
-                    // quite moves
+                    // init target square
+                    target_square = get_ls1st_bit_index(attacks);    
+                    
+                    // quite move
                     if (!get_bit(((side == white) ? occupancies[black] : occupancies[white]), target_square))
-                        printf("piece quiet move: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                    
                     else
-                        printf("piece capture:    %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // pop ls1stbit in current attack set
+                        // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                    
+                    // pop ls1b in current attacks set
                     pop_bit(attacks, target_square);
                 }
-
-                // pop ls1stbit of current piece bitboard copy
+                
+                
+                // pop ls1b of the current piece bitboard copy
                 pop_bit(bitboard, source_square);
             }
         }
+        
         // generate queen moves
         if ((side == white) ? piece == Q : piece == q)
         {
@@ -1931,32 +2012,34 @@ static inline void generate_moves()
             {
                 // init source square
                 source_square = get_ls1st_bit_index(bitboard);
-
-                // init piece attacks in order to get set of target square
+                
+                // init piece attacks in order to get set of target squares
                 attacks = get_queen_attacks(source_square, occupancies[both]) & ((side == white) ? ~occupancies[white] : ~occupancies[black]);
-
-                // loop over target squares avail from generates attacks
+                
+                // loop over target squares available from generated attacks
                 while (attacks)
                 {
-                    //  init target square
-                    target_square = get_ls1st_bit_index(attacks);
-
-                    // quite moves
+                    // init target square
+                    target_square = get_ls1st_bit_index(attacks);    
+                    
+                    // quite move
                     if (!get_bit(((side == white) ? occupancies[black] : occupancies[white]), target_square))
-                        printf("piece quiet move: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                    
                     else
-                        printf("piece capture:    %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // pop ls1stbit in current attack set
+                        // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                    
+                    // pop ls1b in current attacks set
                     pop_bit(attacks, target_square);
                 }
-
-                // pop ls1stbit of current piece bitboard copy
+                
+                
+                // pop ls1b of the current piece bitboard copy
                 pop_bit(bitboard, source_square);
             }
         }
+
         // generate king moves
         if ((side == white) ? piece == K : piece == k)
         {
@@ -1965,35 +2048,34 @@ static inline void generate_moves()
             {
                 // init source square
                 source_square = get_ls1st_bit_index(bitboard);
-
-                // init piece attacks in order to get set of target square
+                
+                // init piece attacks in order to get set of target squares
                 attacks = king_attacks[source_square] & ((side == white) ? ~occupancies[white] : ~occupancies[black]);
-
-                // loop over target squares avail from generates attacks
+                
+                // loop over target squares available from generated attacks
                 while (attacks)
                 {
-                    //  init target square
-                    target_square = get_ls1st_bit_index(attacks);
-
-                    // quite moves
+                    // init target square
+                    target_square = get_ls1st_bit_index(attacks);    
+                    
+                    // quite move
                     if (!get_bit(((side == white) ? occupancies[black] : occupancies[white]), target_square))
-                        printf("piece quiet move: %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
+                    
                     else
-                        printf("piece capture:    %s%s\n", square_to_coordinates[source_square], square_to_coordinates[target_square]);
-
-                    // pop ls1stbit in current attack set
+                        // capture move
+                        add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
+                    
+                    // pop ls1b in current attacks set
                     pop_bit(attacks, target_square);
                 }
 
-                // pop ls1stbit of current piece bitboard copy
+                // pop ls1b of the current piece bitboard copy
                 pop_bit(bitboard, source_square);
             }
         }
     }
 }
-
 //======================================//
 /*
             INIT ALL
@@ -2015,6 +2097,7 @@ void init_all()
     // init_magic_numbers();
 }
 
+
 //======================================//
 /*
             MAIN DRIVER
@@ -2027,15 +2110,18 @@ int main()
     // init all
     init_all();
 
-    // creat move list
-    moves move_list[1];
-    move_list->count = 0;
+    // parse fen
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq c6 0 1");
 
-    // create move
+    print_board();
 
-    add_move(move_list, encode_move(d7, e8, P, Q, 1, 0, 1, 0));
+    // preserve board state
+    copy_board();
 
-    print_move_list(move_list);
+    //restore
+    take_back();
+
+    print_board();
 
     return 0;
 }
