@@ -1917,6 +1917,28 @@ void init_all()
 // extract source square
 #define get_move_source(move) (move & 0x3f)
 
+// extract target square
+#define get_move_target(target)  ((move  & 0xfc0) >> 6)
+
+// extract piece
+#define get_move_piece(move)  ((move & 0xf000) >> 12)
+
+// extract promoted piece
+#define get_move_promoted(move) ((move & 0xf0000) >> 16)
+
+// extract capture flag
+#define get_move_capture(move) (move & 0x100000)
+
+// extract double pawn push flag
+#define get_move_double(move) (move & 0x200000)
+
+// extract enpassant push flag
+#define get_move_enpassant(move) (move & 0x400000)
+
+// extract castling flag
+#define get_move_castling(move) (move & 0x800000)
+
+
 //======================================//
 /*
             MAIN DRIVER
@@ -1929,14 +1951,14 @@ int main()
     // init all
     init_all();
 
-    parse_fen(tricky_position);
-    print_board();
-
     // create move
 
-    int move = 0;
+    int move = encode_move(e7, e8, P, 0, 0, 0, 0, 0);
+    int target_square = get_move_target(move);
+    int piece = get_move_piece(move);
+    int promoted_piece = get_move_promoted(move);
 
-    printf("square h1: %d\n", h1);
+    
 
     return 0;
 }
