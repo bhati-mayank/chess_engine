@@ -1748,6 +1748,27 @@ static inline int make_move(int move, int move_flag)
         // update castling rights
         castle &= castling_rights[source_square];
         castle &= castling_rights[target_square];
+
+        // reset occupancies 
+        memset(occupancies, 0ULL, sizeof(24));
+
+        //  loop over white pieces bitboards
+        for (int bb_piece = P; bb_piece <= K; bb_piece++)
+        {
+            // update white occupancies
+            occupancies[white] |= bitboards[bb_piece];
+        }
+
+        // loop over white piece bitboards
+        for (int bb_piece = p; bb_piece <= k; bb_piece++)
+        {
+            // update white occupancies
+            occupancies[black] |= bitboards[bb_piece];
+        }
+
+        // update both sides occupancies
+        occupancies[both] |= occupancies[white];
+        occupancies[both] |= occupancies[black];
     }
 
     // capture moves
@@ -2287,6 +2308,7 @@ int main()
     // parse fen
     parse_fen(tricky_position);
     print_board();
+    printf("%lu\n", sizeof(occupancies));
 
     // create move list instance
     moves move_list[1];
@@ -2305,15 +2327,15 @@ int main()
 
         // make move
         make_move(move, all_moves);
-        print_board();
-        //print_bitboard(bitboards[get_move_piece(move)]);
+        // print_board();
+        print_bitboard(bitboards[get_move_piece(move)]);
         getchar();
 
         // take back()
         take_back();
-        print_board();
+        // print_board();
 
-       // print_bitboard(bitboards[get_move_piece(move)]);
+       print_bitboard(bitboards[get_move_piece(move)]);
         getchar();
     }
     return 0;
