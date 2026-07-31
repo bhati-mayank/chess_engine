@@ -1619,7 +1619,41 @@ const int castling_rights[64] = {
     13, 15, 15, 15, 12, 15, 15, 14
 };
 
+// is current given square  attacked by current given side
+static inline int is_square_attacked(int square, int side)
+{
 
+    // attacked by white pawns
+    if ((side == white) && (pawn_attacks[black][square] & bitboards[P]))
+        return 1;
+
+    // attacked by pawn pawns
+    if ((side == black) && (pawn_attacks[white][square] & bitboards[p]))
+        return 1;
+
+    // attacked by knights
+    if (knight_attacks[square] & ((side == white) ? bitboards[N] : bitboards[n]))
+        return 1;
+
+    // attacked by bishops
+    if (get_bishop_attacks(square, occupancies[both]) & ((side == white) ? bitboards[B] : bitboards[b]))
+        return 1;
+
+    // attacked by rooks
+    if (get_rook_attacks(square, occupancies[both]) & ((side == white) ? bitboards[R] : bitboards[r]))
+        return 1;
+
+    // attacked by queen
+    if (get_queen_attacks(square, occupancies[both]) & ((side == white) ? bitboards[Q] : bitboards[q]))
+        return 1;
+
+    // attacked by king
+    if (king_attacks[square] & ((side == white) ? bitboards[K] : bitboards[k]))
+        return 1;
+
+    // by default
+    return 0;
+}
 
 // make move on chess board
 static inline int make_move(int move, int move_flag)
@@ -1769,6 +1803,25 @@ static inline int make_move(int move, int move_flag)
         // update both sides occupancies
         occupancies[both] |= occupancies[white];
         occupancies[both] |= occupancies[black];
+
+        // change side after making the move 
+        side ^= 1;
+
+        // make sure that king has not been exposed into a check
+        if (is_square_attacked((side == white) ? get_ls1st_bit_index(bitboards[K]) :  get_ls1st_bit_index(bitboards[k]), side))
+        {
+            // move is illegal, hence take it back
+            take_back();
+
+            //return illegal move
+            return 0;
+        }
+
+        //
+        else{
+            // return legal move
+            return 1;
+        }
     }
 
     // capture moves
@@ -1783,42 +1836,6 @@ static inline int make_move(int move, int move_flag)
             // dont make it
             return 0;
     }
-}
-
-// is current given square  attacked by current given side
-static inline int is_square_attacked(int square, int side)
-{
-
-    // attacked by white pawns
-    if ((side == white) && (pawn_attacks[black][square] & bitboards[P]))
-        return 1;
-
-    // attacked by pawn pawns
-    if ((side == black) && (pawn_attacks[white][square] & bitboards[p]))
-        return 1;
-
-    // attacked by knights
-    if (knight_attacks[square] & ((side == white) ? bitboards[N] : bitboards[n]))
-        return 1;
-
-    // attacked by bishops
-    if (get_bishop_attacks(square, occupancies[both]) & ((side == white) ? bitboards[B] : bitboards[b]))
-        return 1;
-
-    // attacked by rooks
-    if (get_rook_attacks(square, occupancies[both]) & ((side == white) ? bitboards[R] : bitboards[r]))
-        return 1;
-
-    // attacked by queen
-    if (get_queen_attacks(square, occupancies[both]) & ((side == white) ? bitboards[Q] : bitboards[q]))
-        return 1;
-
-    // attacked by king
-    if (king_attacks[square] & ((side == white) ? bitboards[K] : bitboards[k]))
-        return 1;
-
-    // by default
-    return 0;
 }
 
 // print attacked  squares
@@ -2272,6 +2289,8 @@ static inline void generate_moves(moves *move_list)
         }
     }
 }
+
+
 //======================================//
 /*
             INIT ALL
