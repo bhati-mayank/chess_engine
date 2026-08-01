@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef WIN64
-    #include <windows.h>
-#else   
-    #include <sys/time.h>
+#include <windows.h>
+#else
+#include <sys/time.h>
 #endif
 
 // bitboard data type defining
@@ -1527,17 +1527,17 @@ static inline void add_move(moves *move_list, int move)
 // print move (for UCI purposes)
 void print_move(int move)
 {
-    if(get_move_promoted(move))
+    if (get_move_promoted(move))
     {
         printf("%s%s%s\n", square_to_coordinates[get_move_source(move)],
-            square_to_coordinates[get_move_target(move)],
-            square_to_coordinates[get_move_promoted(move)]);
+               square_to_coordinates[get_move_target(move)],
+               square_to_coordinates[get_move_promoted(move)]);
     }
 
     else
     {
         printf("%s%s\n", square_to_coordinates[get_move_source(move)],
-                            square_to_coordinates[get_move_target(move)]);
+               square_to_coordinates[get_move_target(move)]);
     }
 }
 
@@ -1614,7 +1614,7 @@ enum
         white king  moved:     1111 & 1100  =  1100    12
   white king's rook moved:     1111 & 1110  =  1110    14
  white queen's rook moved:     1111 & 1101  =  1101    13
-     
+
          black king moved:     1111 & 0011  =  1011    3
   black king's rook moved:     1111 & 1011  =  1011    11
  black queen's rook moved:     1111 & 0111  =  0111    7
@@ -1623,15 +1623,14 @@ enum
 
 // castling rights update constants
 const int castling_rights[64] = {
-     7, 15, 15, 15,  3, 15, 15, 11,
+    7, 15, 15, 15, 3, 15, 15, 11,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
-    13, 15, 15, 15, 12, 15, 15, 14
-};
+    13, 15, 15, 15, 12, 15, 15, 14};
 
 // is current given square  attacked by current given side
 static inline int is_square_attacked(int square, int side)
@@ -1733,26 +1732,23 @@ static inline int make_move(int move, int move_flag)
 
             // set up promoted piece on chess board
             set_bit(bitboards[promoted_piece], target_square);
-
         }
 
         // handle enpassant captures
-        if(enpass)
+        if (enpass)
         {
             // erse the pawn depending on the side to move
-            (side == white) ? pop_bit(bitboards[p], target_square + 8) :
-                              pop_bit(bitboards[P], target_square - 8);
+            (side == white) ? pop_bit(bitboards[p], target_square + 8) : pop_bit(bitboards[P], target_square - 8);
         }
 
         // reset enpassant square
         enpassant = no_sq;
 
         // handle double pawn push
-        if( double_push)
+        if (double_push)
         {
             // set enpassant square depending on side to move
-            (side == white) ? (enpassant = target_square + 8) :
-                                 (enpassant = target_square - 8);
+            (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
         }
 
         // handle castling moves
@@ -1761,35 +1757,33 @@ static inline int make_move(int move, int move_flag)
             // switch target square
             switch (target_square)
             {
-                // white castles king side
-                case (g1) :
-                    //move H rook
-                    pop_bit(bitboards[R], h1);
-                    set_bit(bitboards[R], f1);
-                    break;
+            // white castles king side
+            case (g1):
+                // move H rook
+                pop_bit(bitboards[R], h1);
+                set_bit(bitboards[R], f1);
+                break;
 
+            // white castles queen side
+            case (c1):
+                // move A rook
+                pop_bit(bitboards[R], a1);
+                set_bit(bitboards[R], d1);
+                break;
 
-                // white castles queen side
-                case (c1) :
-                    //move A rook
-                    pop_bit(bitboards[R], a1);
-                    set_bit(bitboards[R], d1);
-                    break;
+            // black castles king side
+            case (g8):
+                // move H rook
+                pop_bit(bitboards[r], h8);
+                set_bit(bitboards[r], f8);
+                break;
 
-                // black castles king side
-                case (g8) :
-                    //move H rook
-                    pop_bit(bitboards[r], h8);
-                    set_bit(bitboards[r], f8);
-                    break;
-
-                // black castles queen side
-                case (c8) :
-                    //move A rook
-                    pop_bit(bitboards[r], a8);
-                    set_bit(bitboards[r], d8);
-                    break;
-
+            // black castles queen side
+            case (c8):
+                // move A rook
+                pop_bit(bitboards[r], a8);
+                set_bit(bitboards[r], d8);
+                break;
             }
         }
 
@@ -1797,7 +1791,7 @@ static inline int make_move(int move, int move_flag)
         castle &= castling_rights[source_square];
         castle &= castling_rights[target_square];
 
-        // reset occupancies 
+        // reset occupancies
         memset(occupancies, 0ULL, sizeof(occupancies));
 
         //  loop over white pieces bitboards
@@ -1818,21 +1812,22 @@ static inline int make_move(int move, int move_flag)
         occupancies[both] |= occupancies[white];
         occupancies[both] |= occupancies[black];
 
-        // change side after making the move 
+        // change side after making the move
         side ^= 1;
 
         // make sure that king has not been exposed into a check
-        if (is_square_attacked((side == white) ? get_ls1st_bit_index(bitboards[k]) :  get_ls1st_bit_index(bitboards[K]), side))
+        if (is_square_attacked((side == white) ? get_ls1st_bit_index(bitboards[k]) : get_ls1st_bit_index(bitboards[K]), side))
         {
             // move is illegal, hence take it back
             take_back();
 
-            //return illegal move
+            // return illegal move
             return 0;
         }
 
         //
-        else{
+        else
+        {
             // return legal move
             return 1;
         }
@@ -2304,8 +2299,6 @@ static inline void generate_moves(moves *move_list)
     }
 }
 
-
-
 //======================================//
 /*
             PERFT
@@ -2315,13 +2308,13 @@ static inline void generate_moves(moves *move_list)
 // get time in milliseconds
 int get_time_ms()
 {
-    #ifdef WIN64
-        return GetTickCount();
-    #else   
-        struct timeval time_value;
-        gettimeofday(&time_value, NULL);
-        return time_value.tv_sec *1000 + time_value.tv_usec/1000;
-    #endif 
+#ifdef WIN64
+    return GetTickCount();
+#else
+    struct timeval time_value;
+    gettimeofday(&time_value, NULL);
+    return time_value.tv_sec * 1000 + time_value.tv_usec / 1000;
+#endif
 }
 
 // leaf nodes (number of positions reached dr=uring the test of the move generator at a given depth)
@@ -2331,7 +2324,7 @@ long nodes;
 static inline void perft_driver(int depth)
 {
     // reccursion escape condition
-    if(depth == 0)
+    if (depth == 0)
     {
         // increment nodes count
         nodes++;
@@ -2354,76 +2347,144 @@ static inline void perft_driver(int depth)
         copy_board();
 
         // make move
-        if(!make_move(move, all_moves))
+        if (!make_move(move, all_moves))
             continue;
 
         // call perft driver recursively
-        perft_driver(depth-1);
-
-
+        perft_driver(depth - 1);
 
         // take back()
         take_back();
     }
-
-
 }
-
 
 // perft test
 void perft_test(int depth)
 {
     printf("\n     Performance test\n\n");
-    
+
     // create move list instance
     moves move_list[1];
-    
+
     // generate moves
     generate_moves(move_list);
-    
+
     // init start time
     long start = get_time_ms();
-    
+
     // loop over generated moves
     for (int move_count = 0; move_count < move_list->count; move_count++)
-    {   
+    {
         // preserve board state
         copy_board();
-        
+
         // make move
         if (!make_move(move_list->moves[move_count], all_moves))
             // skip to the next move
             continue;
-        
+
         // cummulative nodes
         long cummulative_nodes = nodes;
-        
+
         // call perft driver recursively
         perft_driver(depth - 1);
-        
+
         // old nodes
         long old_nodes = nodes - cummulative_nodes;
-        
+
         // take back
         take_back();
-        
+
         // print move
         printf("     move: %s%s%c  nodes: %ld\n", square_to_coordinates[get_move_source(move_list->moves[move_count])],
-                                                 square_to_coordinates[get_move_target(move_list->moves[move_count])],
-                                                 get_move_promoted(move_list->moves[move_count]) ? promoted_pieces[get_move_promoted(move_list->moves[move_count])] : ' ',
-                                                 old_nodes);
+               square_to_coordinates[get_move_target(move_list->moves[move_count])],
+               get_move_promoted(move_list->moves[move_count]) ? promoted_pieces[get_move_promoted(move_list->moves[move_count])] : ' ',
+               old_nodes);
     }
-    
+
     // print results
     printf("\n    Depth: %d\n", depth);
     printf("    Nodes: %ld\n", nodes);
     printf("     Time: %ld\n\n", get_time_ms() - start);
 }
 
+//======================================//
+/*
+                UCI
+*/
+//======================================//
+
+// parse user move string input(ex : e7e8r)
+int parse_move(char *move_string)
+{
+    // // create move list
+    moves move_list[1];
+
+    // generate moves
+    generate_moves(move_list);
+
+    // parse source square
+    int source_square = (move_string[0] - 'a') + (8 - (move_string[1] - '0')) * 8;
+
+    // parse target square
+    int target_square = (move_string[2] - 'a') + (8 - (move_string[3] - '0')) * 8;
+
+    // loop over the moves within the move list
+    for (int move_count = 0; move_count < move_list->count; move_count++)
+    {
+        // init move
+        int move = move_list->moves[move_count];
+
+        // make sure src and targ square are avail within the generated moves
+        if (source_square ==  get_move_source(move) && target_square == get_move_target(move))
+        {
+            // init promoted piece
+            int promoted_piece = get_move_promoted(move);
+
+            // promoted piece is avail
+            if(promoted_piece)
+            {
+                if ((promoted_piece == Q || promoted_piece == q) && move_string[4] == 'q')
+                {
+                    //return legal move
+                    return move;
+                }
+
+                else if((promoted_piece == R || promoted_piece == r) && move_string[4] == 'r')
+                {
+                    //return legal move
+                    return move;
+                }
+
+
+                else if((promoted_piece == B || promoted_piece == b) && move_string[4] == 'b')
+                {
+                    //return legal move
+                    return move;
+                }
+
+
+                else if((promoted_piece == N || promoted_piece == n) && move_string[4] == 'n')
+                {
+                    //return legal move
+                    return move;
+                }
+
+                // continue the loop on possible wrong move/promtoion
+                continue;
+            }
+            //  return legal move
+            return move;
+        }
+    }
+    // return illegal move
+    return 0;
+}
+
 
 //======================================//
 /*
-            INIT ALL
+                INIT ALL
 */
 //======================================//
 
@@ -2442,8 +2503,6 @@ void init_all()
     // init_magic_numbers();
 }
 
-
-
 //======================================//
 /*
             MAIN DRIVER
@@ -2457,15 +2516,22 @@ int main()
     init_all();
 
     // parse fen
-    parse_fen(tricky_position);
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpP/R3K2R w KkQq - 0 1");
     print_board();
 
-    // start time 
-    int start = get_time_ms();
+    // parse move
+    int move =  parse_move("e1c1");
 
-    // perft
-    perft_test(5);
+    // if move is legal
+    if(move)
+    {
+        // on board
+        make_move(move, all_moves);
+        print_board();
+    }
 
-
+    else   
+        printf("illegal move\n");
+  
     return 0;
 }
