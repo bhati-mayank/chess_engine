@@ -1778,7 +1778,7 @@ static inline int make_move(int move, int move_flag)
                 case (c8) :
                     //move A rook
                     pop_bit(bitboards[r], a8);
-                    set_bit(bitboards[r], h8);
+                    set_bit(bitboards[r], d8);
                     break;
 
             }
@@ -1789,7 +1789,7 @@ static inline int make_move(int move, int move_flag)
         castle &= castling_rights[target_square];
 
         // reset occupancies 
-        memset(occupancies, 0ULL, sizeof(24));
+        memset(occupancies, 0ULL, sizeof(occupancies));
 
         //  loop over white pieces bitboards
         for (int bb_piece = P; bb_piece <= K; bb_piece++)
@@ -1834,7 +1834,7 @@ static inline int make_move(int move, int move_flag)
     {
         // make sure move is the capture
         if (get_move_capture(move))
-            make_move(move, all_moves);
+            return make_move(move, all_moves);
 
         // otherwise the move is not a capture
         else
@@ -2387,19 +2387,19 @@ int main()
     init_all();
 
     // parse fen
-    parse_fen(tricky_position);
+    parse_fen(start_position);
     print_board();
 
     // start time 
     int start = get_time_ms();
 
     // perft
-    perft_driver(1);
+    perft_driver(6);
 
-    printf("%d", get_time_ms() - start);
+    printf("%d ms", get_time_ms() - start);
     printf("\n");
 
-    printf("noded: %ld\n", nodes);
+    printf("nodes: %ld\n", nodes);
 
 
     return 0;
