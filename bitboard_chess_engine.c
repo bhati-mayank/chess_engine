@@ -3,6 +3,11 @@
 // SYSTEM HEADERS
 #include <stdio.h>
 #include <string.h>
+#ifdef WIN64
+    #include <windows.h>
+#else   
+    #include <sys/time.h>
+#endif
 
 // bitboard data type defining
 #define U64 unsigned long long
@@ -2310,6 +2315,33 @@ void init_all()
 
     // init magic numbers
     // init_magic_numbers();
+}
+
+// get time in milliseconds
+int get_time_ms()
+{
+    #ifdef WIN64
+        return GetTickCount();
+    #else   
+        struct timeval time_value;
+        gettimeofday(&time_value, NULL);
+        return time_value.tv_sec *1000 + time_value.tv_usec/1000;
+    #endif 
+}
+
+// leaf nodes (number of positions reached dr=uring the test of the move generator at a given depth)
+long nodes;
+
+// perft driver
+static inline void perft_driver(int depth)
+{
+    // reccursion escape condition
+    if(depth == 0)
+    {
+        // increment nodes count
+        nodes++;
+        return;
+    }
 }
 
 //======================================//
