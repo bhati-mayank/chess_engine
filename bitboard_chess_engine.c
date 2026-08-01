@@ -1484,7 +1484,7 @@ static inline U64 get_queen_attacks(int square, U64 occupancy)
 #define get_move_source(move) (move & 0x3f)
 
 // extract target square
-#define get_move_target(target) ((move & 0xfc0) >> 6)
+#define get_move_target(move) ((move & 0xfc0) >> 6)
 
 // extract piece
 #define get_move_piece(move) ((move & 0xf000) >> 12)
@@ -1723,7 +1723,7 @@ static inline int make_move(int move, int move_flag)
             pop_bit(bitboards[(side == white) ? P : p], target_square);
 
             // set up promoted piece on chess board
-            //set_bit(bitboards[promoted_piece], target_square);
+            set_bit(bitboards[promoted_piece], target_square);
 
         }
 
@@ -1771,14 +1771,14 @@ static inline int make_move(int move, int move_flag)
                 case (g8) :
                     //move H rook
                     pop_bit(bitboards[r], h8);
-                    set_bit(bitboards[R], f8);
+                    set_bit(bitboards[r], f8);
                     break;
 
                 // black castles queen side
                 case (c8) :
                     //move A rook
-                    pop_bit(bitboards[R], a8);
-                    set_bit(bitboards[R], h8);
+                    pop_bit(bitboards[r], a8);
+                    set_bit(bitboards[r], h8);
                     break;
 
             }
@@ -1813,7 +1813,7 @@ static inline int make_move(int move, int move_flag)
         side ^= 1;
 
         // make sure that king has not been exposed into a check
-        if (is_square_attacked((side == white) ? get_ls1st_bit_index(bitboards[K]) :  get_ls1st_bit_index(bitboards[k]), side))
+        if (is_square_attacked((side == white) ? get_ls1st_bit_index(bitboards[k]) :  get_ls1st_bit_index(bitboards[K]), side))
         {
             // move is illegal, hence take it back
             take_back();
@@ -2342,24 +2342,6 @@ static inline void perft_driver(int depth)
         nodes++;
         return;
     }
-}
-
-//======================================//
-/*
-            MAIN DRIVER
-*/
-//======================================//
-
-int main()
-{
-
-    // init all
-    init_all();
-
-    // parse fen
-    parse_fen(tricky_position);
-    print_board();
-    printf("%lu\n", sizeof(occupancies));
 
     // create move list instance
     moves move_list[1];
@@ -2377,17 +2359,48 @@ int main()
         copy_board();
 
         // make move
-        make_move(move, all_moves);
-        // print_board();
-        print_bitboard(bitboards[get_move_piece(move)]);
-        getchar();
+        if(!make_move(move, all_moves))
+            continue;
+
+        // call perft driver recursively
+        perft_driver(depth-1);
+
+
 
         // take back()
         take_back();
-        // print_board();
-
-       print_bitboard(bitboards[get_move_piece(move)]);
-        getchar();
     }
+
+
+}
+
+//======================================//
+/*
+            MAIN DRIVER
+*/
+//======================================//
+
+int main()
+{
+
+    // init all
+    init_all();
+
+    // parse fen
+    parse_fen(tricky_position);
+    print_board();
+
+    // start time 
+    int start = get_time_ms();
+
+    // perft
+    perft_driver(1);
+
+    printf("%d", get_time_ms() - start);
+    printf("\n");
+
+    printf("noded: %ld\n", nodes);
+
+
     return 0;
 }
